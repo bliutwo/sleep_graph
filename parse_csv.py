@@ -12,6 +12,7 @@ class CsvParser:
     with open(filename, 'r') as f:
       for index, line in enumerate(f):
         line = line.replace('\n', '')
+        line = line.lower()
         line_list = line.split(',')
         if index == 0:
           index_to_column_label = {index: label for index, label in enumerate(line_list)}
@@ -60,33 +61,39 @@ class ColumnHandler:
     final_list_of_values = []
     list_of_values = [item.replace('min', 'm') for item in list_of_values]
     for raw_time_string in list_of_values:
+      #print(raw_time_string)
       final_value = 0
-      if ':' not in raw_time_string:
-        #if raw_time_string != "0":
-        x = re.search("(\d+)?h?(\d+)?m?", raw_time_string)
-        if x.group(1) is None or x.group(2) is None:
-          # If they are both none, do nothing
-          if x.group(1) is None and x.group(2) is None:
-            continue
-          # One of h or m is missing
-          if 'h' in raw_time_string:
-            # We're only looking at hour times
-            final_value = int(x.group(1)) * 60
-          else:
-            # We're only looking at minute times
-            final_value = int(x.group(1))
-        else:
-          hours = int(x.group(1))
-          minutes = int(x.group(2))
-          final_value = (hours * 60) + minutes
-        #else:
-        #  final_value = numpy.nan
+      if raw_time_string == "-1":
+        #print("Detected a -1")
+        final_value = -1
       else:
-        if 'quiet time' not in raw_time_string.lower():
-          hours, minutes = self._convert_datetime(raw_time_string)
-          final_value = (hours * 60) + minutes
+        if ':' not in raw_time_string:
+          #if raw_time_string != "0":
+          x = re.search("(\d+)?h?(\d+)?m?", raw_time_string)
+          if x.group(1) is None or x.group(2) is None:
+            # If they are both none, do nothing
+            if x.group(1) is None and x.group(2) is None:
+              continue
+            # One of h or m is missing
+            if 'h' in raw_time_string:
+              # We're only looking at hour times
+              final_value = int(x.group(1)) * 60
+            else:
+              # We're only looking at minute times
+              final_value = int(x.group(1))
+          else:
+            hours = int(x.group(1))
+            minutes = int(x.group(2))
+            final_value = (hours * 60) + minutes
+          #else:
+          #  final_value = numpy.nan
         else:
-          final_value = 0
+          if 'quiet time' not in raw_time_string.lower():
+            hours, minutes = self._convert_datetime(raw_time_string)
+            final_value = (hours * 60) + minutes
+          else:
+            final_value = 0
+      #print(f"Final value: {final_value}")
       final_list_of_values.append(final_value)
     final_list_of_values = [minutes / 60.0 for minutes in final_list_of_values]
     return final_list_of_values
